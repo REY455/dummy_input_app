@@ -40,5 +40,6 @@ jobs:
             sudo docker stop flask-container || true
             sudo docker rm flask-container || true
             sudo docker system prune -f  # Clean up old images and containers
-            sudo docker run -d --name flask-container -p 5000:5000 basharahmed/flask-app:latest
+            sudo docker run -d --name flask-container -p 80:80 basharahmed/flask-app:latest
+
             sudo systemctl restart nginx
