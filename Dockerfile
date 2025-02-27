@@ -1,28 +1,26 @@
+FROM python:3.9-slim
 
-FROM python:3.9-slim AS flask
+# Install NGINX and Supervisor
+RUN apt-get update && \
+    apt-get install -y nginx supervisor && \
+    rm -rf /var/lib/apt/lists/*
 
+# Set up working directory
 WORKDIR /app
 
+# Copy Flask app requirements and install them
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Copy Flask app code
 COPY . .
 
-# Step 2: Use Nginx as the base image
-FROM nginx:latest
+# Copy NGINX configuration and Supervisor config
+COPY nginx.conf /etc/nginx/nginx.conf
+COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
-# Copy Nginx configuration
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Expose necessary ports
+EXPOSE 5000 80
 
-# Install Python and Flask dependencies inside the Nginx container
-RUN apt update && apt install -y python3 python3-pip && rm -rf /var/lib/apt/lists/*
-
-WORKDIR /app
-COPY --from=flask /app /app
-RUN pip3 install -r requirements.txt
-
-# Expose ports for Nginx
-EXPOSE 80
-
-# Start both Nginx and Flask
-CMD service nginx start && python3 app.py
+# Start Supervisor
+CMD ["/usr/bin/supervisord"]

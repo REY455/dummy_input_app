@@ -35,11 +35,24 @@ jobs:
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
+            set -e
+            echo "Logging into DockerHub on EC2..."
             sudo docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" -p "${{ secrets.DOCKERHUB_PASSWORD }}"
-            sudo docker pull basharahmed/flask-app:latest
-            sudo docker stop flask-container || true
-            sudo docker rm flask-container || true
-            sudo docker system prune -f  # Clean up old images and containers
-            sudo docker run -d --name flask-container -p 80:80 basharahmed/flask-app:latest
-
             
+            echo "Pulling the latest Docker image..."
+            sudo docker pull basharahmed/flask-app:latest
+            
+            echo "Checking for an existing container..."
+            if sudo docker ps -a --format '{{.Names}}' | grep -Eq "^flask-container\$"; then
+              echo "Stopping and removing existing flask-container..."
+              sudo docker stop flask-container
+              sudo docker rm flask-container
+            else
+              echo "No existing container found."
+            fi
+            
+            echo "Cleaning up unused Docker resources..."
+            sudo docker system prune -f
+            
+            echo "Deploying the updated container with both Flask and NGINX..."
+            sudo docker run -d --name flask-container -p 80:80 basharahmed/flask-app:latest
