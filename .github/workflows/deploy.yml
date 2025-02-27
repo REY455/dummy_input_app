@@ -42,4 +42,4 @@ jobs:
             sudo docker system prune -f  # Clean up old images and containers
             sudo docker run -d --name flask-container -p 80:80 basharahmed/flask-app:latest
 
-            sudo systemctl restart nginx
+            
