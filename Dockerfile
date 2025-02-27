@@ -1,24 +1,28 @@
-# Use an official Python runtime as the base image
-FROM python:3.9-slim
 
-# Set the working directory in the container
+FROM python:3.9-slim AS flask
+
 WORKDIR /app
 
-# Copy the requirements file into the container
 COPY requirements.txt .
-
-# Install the dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the rest of the application code
 COPY . .
 
-# Expose port 5000 for the Flask app
-EXPOSE 5000
+# Step 2: Use Nginx as the base image
+FROM nginx:latest
 
-# Set environment variables
-ENV FLASK_APP=app.py
-ENV FLASK_ENV=development
+# Copy Nginx configuration
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Run the Flask application
-CMD ["flask", "run", "--host=0.0.0.0", "--port=5000"]
+# Install Python and Flask dependencies inside the Nginx container
+RUN apt update && apt install -y python3 python3-pip && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+COPY --from=flask /app /app
+RUN pip3 install -r requirements.txt
+
+# Expose ports for Nginx
+EXPOSE 80
+
+# Start both Nginx and Flask
+CMD service nginx start && python3 app.py
